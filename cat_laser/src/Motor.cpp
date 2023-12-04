@@ -15,35 +15,39 @@ Motor::Motor(int pin_register, volatile uint16_t* timer_register, int motor_duty
     *timer_register = motor_duty; // starting duty cycle for motor
 }
 
-void Motor::CalibrateMove(int direction, int speed) { // waits for button interrupt
-    while ((this->position != LOWER_LIMIT) || (this->position != UPPER_LIMIT)) {
-        *timer_register = this->position; // move motor to "position" by setting duty cycle
-        this->position += direction*speed; // increment or decrement position (duty cycle) depending on direction
-    } // need to switch directions somehow
+int Motor::CalibrateMove(int direction, int speed) { // waits for button interrupt
+    // while ((this->position != LOWER_LIMIT) || (this->position != UPPER_LIMIT)) {
+    //     *timer_register = this->position; // move motor to "position" by setting duty cycle
+    //     this->position += direction*speed; // increment or decrement position (duty cycle) depending on direction
+    // } // need to switch directions somehow
 
     // alternatively, with a for loop:
-    // int span = 0;
-    // while (button not pressed):
-    // if direction = 1:
-        // span = UPPER_LIMIT - this->position
-        // for (int i = 0, i < span, i+=speed) {
-            // *timer_register = this->position;
-            // this->position += speed;
-        // } // now at UPPER_LIMIT
-        // span = abs(this->position - LOWER_LIMIT)
-        // for (int i = 0, i < span, i+=speed) {
-            // *timer_register = this->position;
-            // this->position -= speed;
-        // } // now at LOWER_LIMIT
-    // else if direction = -1:
-        // span = this->position - LOWER_LIMIT
-        // for (int i = 0, i < span, i+=speed) {
-            // *timer_register = this->position;
-            // this->position -= speed;
-        // } // now at LOWER_LIMIT
-        // span = abs(this->position - UPPER_LIMIT)
-        // for (int i = 0, i < span, i+=speed) {
-            // *timer_register = this->position;
-            // this->position += speed;
-        // } // now at UPPER_LIMIT
+    int span = 0;
+    bool isPressed = false; // triggered by interrupt or smth
+    while (!isPressed) { 
+        if (direction == 1) {
+            span = UPPER_LIMIT - this->position;
+            for (int i = 0; i < span; i+=speed) {
+                *timer_register = this->position;
+                this->position += speed;
+            } // now at UPPER_LIMIT
+            span = abs(this->position - LOWER_LIMIT);
+            for (int i = 0; i < span; i+=speed) {
+                *timer_register = this->position;
+                this->position -= speed;
+            } // now at LOWER_LIMIT
+        } else if (direction == -1) {
+            span = this->position - LOWER_LIMIT;
+            for (int i = 0; i < span; i+=speed) {
+                *timer_register = this->position;
+                this->position -= speed;
+            } // now at LOWER_LIMIT
+            span = abs(this->position - UPPER_LIMIT);
+            for (int i = 0; i < span; i+=speed) {
+                *timer_register = this->position;
+                this->position += speed;
+            } // now at UPPER_LIMIT
+        }
+    }
+    return this->position;
 }
