@@ -6,17 +6,22 @@
 #include "Timer.hpp"
 #include "Motor.hpp"
 
+// initialise macros
+#define CW 1
+#define CCW -1
+#define SLOW 5 // 5 increment/decrement (play with this)
+
 // initialise counter variables: 
 volatile int counter = 0;
 volatile int counterMatch = 100;
-int motor1_duty = 400;
-int motor2_duty = 400;
+int outer_motor_duty = 400;
+int laser_motor_duty = 400;
 int top_count = 5000;
 int state = 0;
 
 // define pointers for PWM registers:
-volatile uint16_t* motor1_pwm = &OCR1A;
-volatile uint16_t* motor2_pwm = &OCR1B;
+volatile uint16_t* outer_motor_pwm = &OCR1A;
+volatile uint16_t* laser_motor_pwm = &OCR1B;
 
 // timer ISR: 
 ISR(TIMER1_OVF_vect) {
@@ -31,17 +36,17 @@ int main(void) {
   // Timer 1 (16-bit):
   class Timer timer(top_count, counterMatch);
 
-  // Servo 1: OC1A (PB1) and Servo 2: OC1B (PB2) controlled by PWM output from Timer 1
-  class Motor motor1(DDB1, motor1_pwm, motor1_duty);
-  class Motor motor2(DDB2, motor2_pwm, motor2_duty);
+  // Servo 1 - outer motor: OC1A (PB1) and Servo 2 - laser motor: OC1B (PB2) controlled by PWM output from Timer 1
+  class Motor outer_motor(DDB1, outer_motor_pwm, outer_motor_duty);
+  class Motor laser_motor(DDB2, laser_motor_pwm, laser_motor_duty);
 
   sei(); // enable interrupts
 
   while(1) { // superloop
     if (counter == counterMatch) {
       // randomise position of motors 1 and 2:
-      *motor1_pwm = timer.RandomNumber(200, 800);
-      *motor2_pwm = timer.RandomNumber(200, 800);
+      *outer_motor_pwm = timer.RandomNumber(200, 800);
+      *laser_motor_pwm = timer.RandomNumber(200, 800);
       counterMatch = timer.RandomNumber(20, 50); // randomise time interval 
       counter = 0;
     }
