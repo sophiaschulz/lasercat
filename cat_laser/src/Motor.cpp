@@ -21,6 +21,8 @@ int Motor::CalibrateMove(int direction, int speed) { // waits for button interru
     //     this->position += direction*speed; // increment or decrement position (duty cycle) depending on direction
     // } // need to switch directions somehow
 
+    // note that idk how fast this will spin with the delays and increments i've set lol
+
     // alternatively, with a for loop:
     int span = 0;
     bool isPressed = false; // triggered by interrupt or smth
@@ -30,24 +32,28 @@ int Motor::CalibrateMove(int direction, int speed) { // waits for button interru
             for (int i = 0; i < span; i+=speed) {
                 *timer_register = this->position;
                 this->position += speed;
+                delay(speed);
             } // now at UPPER_LIMIT
             span = abs(this->position - LOWER_LIMIT);
             for (int i = 0; i < span; i+=speed) {
                 *timer_register = this->position;
                 this->position -= speed;
+                delay(speed);
             } // now at LOWER_LIMIT
         } else if (direction == -1) {
             span = this->position - LOWER_LIMIT;
             for (int i = 0; i < span; i+=speed) {
                 *timer_register = this->position;
                 this->position -= speed;
+                delay(speed);
             } // now at LOWER_LIMIT
             span = abs(this->position - UPPER_LIMIT);
             for (int i = 0; i < span; i+=speed) {
                 *timer_register = this->position;
                 this->position += speed;
+                delay(speed);
             } // now at UPPER_LIMIT
         }
     }
-    return this->position;
+    return this->position; // returns position when button was pressed (i hope)
 }
