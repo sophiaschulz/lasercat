@@ -15,7 +15,7 @@ class Motor {
         volatile uint16_t* timer_register;
         int position; // current position in terms of duty cycle
         Motor(int pin_register, volatile uint16_t* timer_register, int motor_duty); // constructor
-        int CalibrateMove(int direction, int speed);
+        void CalibrateMove(int target);
 };
 
 #endif

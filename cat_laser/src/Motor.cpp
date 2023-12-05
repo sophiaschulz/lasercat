@@ -15,7 +15,11 @@ Motor::Motor(int pin_register, volatile uint16_t* timer_register, int motor_duty
     *timer_register = motor_duty; // starting duty cycle for motor
 }
 
-int Motor::CalibrateMove(int direction, int speed) { // waits for button interrupt
+// can probably get rid of this method altogether
+void Motor::CalibrateMove(int target) {
+    *timer_register = target; // set duty cycle to target position
+}
+
     // while ((this->position != LOWER_LIMIT) || (this->position != UPPER_LIMIT)) {
     //     *timer_register = this->position; // move motor to "position" by setting duty cycle
     //     this->position += direction*speed; // increment or decrement position (duty cycle) depending on direction
@@ -24,36 +28,37 @@ int Motor::CalibrateMove(int direction, int speed) { // waits for button interru
     // note that idk how fast this will spin with the delays and increments i've set lol
 
     // alternatively, with a for loop:
-    int span = 0;
-    bool isPressed = false; // triggered by interrupt or smth
-    while (!isPressed) { 
-        if (direction == 1) {
-            span = UPPER_LIMIT - this->position;
-            for (int i = 0; i < span; i+=speed) {
-                *timer_register = this->position;
-                this->position += speed;
-                delay(speed);
-            } // now at UPPER_LIMIT
-            span = abs(this->position - LOWER_LIMIT);
-            for (int i = 0; i < span; i+=speed) {
-                *timer_register = this->position;
-                this->position -= speed;
-                delay(speed);
-            } // now at LOWER_LIMIT
-        } else if (direction == -1) {
-            span = this->position - LOWER_LIMIT;
-            for (int i = 0; i < span; i+=speed) {
-                *timer_register = this->position;
-                this->position -= speed;
-                delay(speed);
-            } // now at LOWER_LIMIT
-            span = abs(this->position - UPPER_LIMIT);
-            for (int i = 0; i < span; i+=speed) {
-                *timer_register = this->position;
-                this->position += speed;
-                delay(speed);
-            } // now at UPPER_LIMIT
-        }
-    }
-    return this->position; // returns position when button was pressed (i hope)
-}
+    // int span = 0; 
+    // bool isPressed = false; // triggered by interrupt or smth; either this or while state isn't changed
+    //     // how tf is this gonna inherit the state from main.cpp
+    // while (!isPressed) { 
+    //     if (direction == 1) {
+    //         span = UPPER_LIMIT - this->position;
+    //         for (int i = 0; i < span; i+=speed) {
+    //             *timer_register = this->position;
+    //             this->position += speed;
+    //             delay(speed);
+    //         } // now at UPPER_LIMIT
+    //         span = abs(this->position - LOWER_LIMIT);
+    //         for (int i = 0; i < span; i+=speed) {
+    //             *timer_register = this->position;
+    //             this->position -= speed;
+    //             delay(speed);
+    //         } // now at LOWER_LIMIT
+    //     } else if (direction == -1) {
+    //         span = this->position - LOWER_LIMIT;
+    //         for (int i = 0; i < span; i+=speed) {
+    //             *timer_register = this->position;
+    //             this->position -= speed;
+    //             delay(speed);
+    //         } // now at LOWER_LIMIT
+    //         span = abs(this->position - UPPER_LIMIT);
+    //         for (int i = 0; i < span; i+=speed) {
+    //             *timer_register = this->position;
+    //             this->position += speed;
+    //             delay(speed);
+    //         } // now at UPPER_LIMIT
+    //     }
+    // }
+    // return this->position; // returns position when button was pressed (i hope. actually idk if this works)
+    //     // could prob just use a setter function within the ISR instead honestly - actually nvm this wouldn't work

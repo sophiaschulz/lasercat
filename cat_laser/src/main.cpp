@@ -10,6 +10,10 @@
 #define CW 1
 #define CCW -1
 #define SLOW 5 // 5 increment/decrement (play with this)
+#define START 0
+#define CALIBRATE_Y 1
+#define CALIBRATE_X 2
+#define FREERUN 3
 
 // initialise counter variables: 
 volatile int counter = 0;
@@ -17,7 +21,18 @@ volatile int counterMatch = 100;
 int outer_motor_duty = 400;
 int laser_motor_duty = 400;
 int top_count = 5000;
-int state = 0;
+
+// initialise state variables:
+int currentState = START;
+int nextState = START;
+bool isCalPressed = false;
+bool isMovePressed = false;
+
+// initialise limit variables
+int lowLim_x = 200;
+int lowLim_y = 200;
+int uppLim_x = 800;
+int uppLim_y = 800;
 
 // define pointers for PWM registers:
 volatile uint16_t* outer_motor_pwm = &OCR1A;
@@ -27,6 +42,16 @@ volatile uint16_t* laser_motor_pwm = &OCR1B;
 ISR(TIMER1_OVF_vect) {
   counter++;
   TCNT1 = 0;  // reset timer
+}
+
+// calibrate button ISR:
+ISR(INT0_vect) { // which pin is this again??
+  isCalPressed = true;
+}
+
+// move button ISR:
+ISR(INT1_vect) { // which pin is this again??
+  isMovePressed = true;
 }
 
 int main(void) {
@@ -43,14 +68,120 @@ int main(void) {
   sei(); // enable interrupts
 
   while(1) { // superloop
-    if (counter == counterMatch) {
-      // randomise position of motors 1 and 2:
-      *outer_motor_pwm = timer.RandomNumber(200, 800);
-      *laser_motor_pwm = timer.RandomNumber(200, 800);
-      counterMatch = timer.RandomNumber(20, 50); // randomise time interval 
-      counter = 0;
+    switch (currentState) {
+      case START:
+        // TODO: turn on laser (need input pin)
+
+        if (isMovePressed) {
+          currentState = FREERUN;
+          isMovePressed = false;
+        }
+        if (isCalPressed) {
+          currentState = CALIBRATE_Y;
+          isCalPressed = false;
+        }
+        break;
+
+      case CALIBRATE_Y:
+        int span = 0; 
+        while (!isCalPressed) { // move motor until button is pressed to set UPPER LIMIT
+          // rotate CW:
+          span = abs(UPPER_LIMIT - outer_motor.position);
+          for (int i = 0; i < span; i+=SLOW) {
+            *outer_motor_pwm = outer_motor.position;
+            outer_motor.position += SLOW;
+            delay(SLOW);
+          } // now at UPPER_LIMIT
+          // rotate CCW:
+          span = abs(outer_motor.position - LOWER_LIMIT);
+          for (int i = 0; i < span; i+=SLOW) {
+            *outer_motor_pwm = outer_motor.position;
+            outer_motor.position -= SLOW;
+            delay(SLOW);
+          } // now at LOWER_LIMIT
+        }
+        lowLim_y = outer_motor.position;
+        isCalPressed = false;
+        while (!isCalPressed) { // move motor until button is pressed again
+          // rotate CCW:
+          span = abs(outer_motor.position - LOWER_LIMIT);
+          for (int i = 0; i < span; i+=SLOW) {
+            *outer_motor_pwm = outer_motor.position;
+            outer_motor.position -= SLOW;
+            delay(SLOW);
+          } // now at LOWER_LIMIT
+          // rotate CW:
+          span = abs(UPPER_LIMIT - outer_motor.position);
+          for (int i = 0; i < span; i+=SLOW) {
+            *outer_motor_pwm = outer_motor.position;
+            outer_motor.position += SLOW;
+            delay(SLOW);
+          } // now at UPPER_LIMIT
+        }
+        uppLim_y = outer_motor.position;
+        isCalPressed = false;
+        break;
+
+      case CALIBRATE_X:
+        int span = 0; 
+        while (!isCalPressed) { // move motor until button is pressed
+          // rotate CCW:
+          span = abs(laser_motor.position - LOWER_LIMIT);
+          for (int i = 0; i < span; i+=SLOW) {
+            *laser_motor_pwm = laser_motor.position;
+            laser_motor.position -= SLOW;
+            delay(SLOW);
+          } // now at LOWER_LIMIT
+          // rotate CW:
+          span = abs(UPPER_LIMIT - laser_motor.position);
+          for (int i = 0; i < span; i+=SLOW) {
+            *laser_motor_pwm = laser_motor.position;
+            laser_motor.position += SLOW;
+            delay(SLOW);
+          } // now at UPPER_LIMIT
+        }
+        lowLim_x = laser_motor.position;
+        isCalPressed = false;
+        while (!isCalPressed) { // move motor until button is pressed again
+          // rotate CW:
+          span = abs(UPPER_LIMIT - laser_motor.position);
+          for (int i = 0; i < span; i+=SLOW) {
+            *laser_motor_pwm = laser_motor.position;
+            laser_motor.position += SLOW;
+            delay(SLOW);
+          } // now at UPPER_LIMIT
+          // rotate CCW:
+          span = abs(laser_motor.position - LOWER_LIMIT);
+          for (int i = 0; i < span; i+=SLOW) {
+            *laser_motor_pwm = laser_motor.position;
+            laser_motor.position -= SLOW;
+            delay(SLOW);
+          } // now at LOWER_LIMIT
+        }
+        uppLim_x = laser_motor.position;
+        isCalPressed = false;
+        currentState = FREERUN;
+        break;
+
+      case FREERUN:
+        // TODO: randomise position of outer and laser motors
+
+        if (isMovePressed) {
+          currentState = START;
+          isMovePressed = false;
+        }
+        break;
     }
   }
+
+    // old randomise code:
+    // if (counter == counterMatch) {
+    //   // randomise position of motors 1 and 2:
+    //   *outer_motor_pwm = timer.RandomNumber(200, 800);
+    //   *laser_motor_pwm = timer.RandomNumber(200, 800);
+    //   counterMatch = timer.RandomNumber(20, 50); // randomise time interval 
+    //   counter = 0;
+    // }
 }
 
 //WORKING CODE:
