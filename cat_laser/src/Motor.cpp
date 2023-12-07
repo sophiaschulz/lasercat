@@ -15,10 +15,10 @@ Motor::Motor(int pin_register, volatile uint16_t* timer_register, int motor_duty
     *timer_register = motor_duty; // starting duty cycle for motor
 }
 
-// can probably get rid of this method altogether
-void Motor::CalibrateMove(int target) {
-    *timer_register = target; // set duty cycle to target position
-}
+// // can probably get rid of this method altogether
+// void Motor::CalibrateMove(int target) {
+//     *timer_register = target; // set duty cycle to target position
+// }
 
     // while ((this->position != LOWER_LIMIT) || (this->position != UPPER_LIMIT)) {
     //     *timer_register = this->position; // move motor to "position" by setting duty cycle

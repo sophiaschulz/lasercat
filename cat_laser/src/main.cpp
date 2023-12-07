@@ -6,9 +6,7 @@
 #include "Timer.hpp"
 #include "Motor.hpp"
 
-// initialise macros
-#define CW 1
-#define CCW -1
+// initialise macros:
 #define SLOW 5 // 5 increment/decrement (play with this)
 #define START 0
 #define CALIBRATE_Y 1
@@ -28,7 +26,7 @@ int nextState = START;
 bool isCalPressed = false;
 bool isMovePressed = false;
 
-// initialise limit variables
+// initialise limit variables:
 int lowLim_x = 200;
 int lowLim_y = 200;
 int uppLim_x = 800;
@@ -37,6 +35,8 @@ int uppLim_y = 800;
 // define pointers for PWM registers:
 volatile uint16_t* outer_motor_pwm = &OCR1A;
 volatile uint16_t* laser_motor_pwm = &OCR1B;
+
+// TODO: define pins for input buttons?
 
 // timer ISR: 
 ISR(TIMER1_OVF_vect) {
@@ -72,6 +72,13 @@ int main(void) {
       case START:
         // TODO: turn on laser (need input pin)
 
+        // reset calibrated limits:
+        lowLim_x = 200;
+        lowLim_y = 200;
+        uppLim_x = 800;
+        uppLim_y = 800;
+
+        // state transitions:
         if (isMovePressed) {
           currentState = FREERUN;
           isMovePressed = false;
@@ -104,12 +111,12 @@ int main(void) {
         isCalPressed = false;
         while (!isCalPressed) { // move motor until button is pressed again
           // rotate CCW:
-          span = abs(outer_motor.position - LOWER_LIMIT);
+          span = abs(outer_motor.position - lowLim_y);
           for (int i = 0; i < span; i+=SLOW) {
             *outer_motor_pwm = outer_motor.position;
             outer_motor.position -= SLOW;
             delay(SLOW);
-          } // now at LOWER_LIMIT
+          } // now at lowLim_y
           // rotate CW:
           span = abs(UPPER_LIMIT - outer_motor.position);
           for (int i = 0; i < span; i+=SLOW) {
@@ -151,12 +158,12 @@ int main(void) {
             delay(SLOW);
           } // now at UPPER_LIMIT
           // rotate CCW:
-          span = abs(laser_motor.position - LOWER_LIMIT);
+          span = abs(laser_motor.position - lowLim_x);
           for (int i = 0; i < span; i+=SLOW) {
             *laser_motor_pwm = laser_motor.position;
             laser_motor.position -= SLOW;
             delay(SLOW);
-          } // now at LOWER_LIMIT
+          } // now at lowLim_x
         }
         uppLim_x = laser_motor.position;
         isCalPressed = false;
@@ -164,11 +171,21 @@ int main(void) {
         break;
 
       case FREERUN:
-        // TODO: randomise position of outer and laser motors
-
+        // state transition:
         if (isMovePressed) {
           currentState = START;
           isMovePressed = false;
+        }
+        
+        // TODO: randomise position of outer and laser motors
+
+        // old randomise code:
+        if (counter == counterMatch) {
+          // randomise position of motors 1 and 2:
+          *outer_motor_pwm = timer.RandomNumber(200, 800);
+          *laser_motor_pwm = timer.RandomNumber(200, 800);
+          counterMatch = timer.RandomNumber(20, 50); // randomise time interval 
+          counter = 0;
         }
         break;
     }
