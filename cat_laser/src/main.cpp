@@ -90,6 +90,11 @@ int main(void) {
         break;
 
       case CALIBRATE_Y:
+        if (isMovePressed) {
+          currentState = START;
+          isMovePressed = false;
+        }
+
         int span = 0; 
         while (!isCalPressed) { // move motor until button is pressed to set UPPER LIMIT
           // rotate CW:
@@ -130,6 +135,11 @@ int main(void) {
         break;
 
       case CALIBRATE_X:
+        if (isMovePressed) {
+          currentState = START;
+          isMovePressed = false;
+        }
+
         int span = 0; 
         while (!isCalPressed) { // move motor until button is pressed
           // rotate CCW:
