@@ -186,6 +186,10 @@ int main(void) {
           currentState = START;
           isMovePressed = false;
         }
+        if (isCalPressed) {
+          currentState = CALIBRATE_Y;
+          isCalPressed = false;
+        }
         
         // TODO: randomise position of outer and laser motors
 
